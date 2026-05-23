@@ -1,6 +1,6 @@
 export const CONTRACTS = {
   LendingPool: {
-    address: "0x5E4a7B73A4213246E4Ca4a9E41a9F65d15c11aB5",
+    address: "0xA2756E0dA994c6695C058321b26080133b158D10",
     abi: [
       {
         name: "supply",
@@ -110,10 +110,10 @@ export const CONTRACTS = {
         inputs: [{ name: "", type: "address" }],
         outputs: [
           { name: "collateralAmount", type: "uint256" },
-          { name: "collateralAsset", type: "address" },
-          { name: "borrowedAmount", type: "uint256" },
-          { name: "lastUpdateTime", type: "uint256" },
-          { name: "interestOwed", type: "uint256" },
+          { name: "collateralAsset",  type: "address" },
+          { name: "borrowedAmount",   type: "uint256" },
+          { name: "lastUpdateTime",   type: "uint256" },
+          { name: "interestOwed",     type: "uint256" },
         ],
       },
       {
@@ -122,15 +122,16 @@ export const CONTRACTS = {
         stateMutability: "view",
         inputs: [{ name: "", type: "address" }],
         outputs: [
-          { name: "amount", type: "uint256" },
+          { name: "amount",         type: "uint256" },
           { name: "lastUpdateTime", type: "uint256" },
           { name: "interestEarned", type: "uint256" },
         ],
       },
     ],
   },
+
   MockUSDC: {
-    address: "0xD00d26b7Ee3a909Fe1513c3bCDBFd0dCe937baC6",
+    address: "0x9ceCeFe56C72bE0063E7915b04d6C214BADD18c1",
     abi: [
       {
         name: "balanceOf",
@@ -145,7 +146,7 @@ export const CONTRACTS = {
         stateMutability: "nonpayable",
         inputs: [
           { name: "spender", type: "address" },
-          { name: "amount", type: "uint256" },
+          { name: "amount",  type: "uint256" },
         ],
         outputs: [{ name: "", type: "bool" }],
       },
@@ -154,20 +155,10 @@ export const CONTRACTS = {
         type: "function",
         stateMutability: "view",
         inputs: [
-          { name: "owner", type: "address" },
+          { name: "owner",   type: "address" },
           { name: "spender", type: "address" },
         ],
         outputs: [{ name: "", type: "uint256" }],
-      },
-      {
-        name: "mint",
-        type: "function",
-        stateMutability: "nonpayable",
-        inputs: [
-          { name: "to", type: "address" },
-          { name: "amount", type: "uint256" },
-        ],
-        outputs: [],
       },
       {
         name: "decimals",
@@ -185,8 +176,9 @@ export const CONTRACTS = {
       },
     ],
   },
+
   MockWETH: {
-    address: "0x916cF05B2C7760616520873165617B68C0ea02d4",
+    address: "0x3881C83EE82e2F8Be4c9eB10cf39f3eB1C275353",
     abi: [
       {
         name: "balanceOf",
@@ -201,7 +193,7 @@ export const CONTRACTS = {
         stateMutability: "nonpayable",
         inputs: [
           { name: "spender", type: "address" },
-          { name: "amount", type: "uint256" },
+          { name: "amount",  type: "uint256" },
         ],
         outputs: [{ name: "", type: "bool" }],
       },
@@ -210,20 +202,10 @@ export const CONTRACTS = {
         type: "function",
         stateMutability: "view",
         inputs: [
-          { name: "owner", type: "address" },
+          { name: "owner",   type: "address" },
           { name: "spender", type: "address" },
         ],
         outputs: [{ name: "", type: "uint256" }],
-      },
-      {
-        name: "mint",
-        type: "function",
-        stateMutability: "nonpayable",
-        inputs: [
-          { name: "to", type: "address" },
-          { name: "amount", type: "uint256" },
-        ],
-        outputs: [],
       },
       {
         name: "decimals",
@@ -238,6 +220,20 @@ export const CONTRACTS = {
         stateMutability: "view",
         inputs: [],
         outputs: [{ name: "", type: "string" }],
+      },
+      {
+        name: "faucet",
+        type: "function",
+        stateMutability: "nonpayable",
+        inputs: [],
+        outputs: [],
+      },
+      {
+        name: "faucetCooldownRemaining",
+        type: "function",
+        stateMutability: "view",
+        inputs: [{ name: "account", type: "address" }],
+        outputs: [{ name: "", type: "uint256" }],
       },
     ],
   },

@@ -1,3 +1,4 @@
+import { parseUnits } from 'viem'
 
 // Format numbers for display
 export function formatNumber(num, decimals = 2) {
@@ -65,13 +66,21 @@ export function getHealthStatus(wadValue) {
 // Parse USDC input to 6 decimal bigint
 export function parseUSDC(amount) {
   if (!amount) return 0n
-  return BigInt(Math.floor(parseFloat(amount) * 1e6))
+  try {
+    return parseUnits(amount.toString(), 6)
+  } catch {
+    return 0n
+  }
 }
 
 // Parse WETH input to 18 decimal bigint
 export function parseWETH(amount) {
   if (!amount) return 0n
-  return BigInt(Math.floor(parseFloat(amount) * 1e18))
+  try {
+    return parseUnits(amount.toString(), 18)
+  } catch {
+    return 0n
+  }
 }
 
 // Shorten address

@@ -29,9 +29,20 @@ const arcTestnet = {
   testnet: true,
 }
 
+/* WalletConnect Project ID from environment variable — never hardcode */
+const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || ""
+
+if (!projectId) {
+  console.warn(
+    "WalletConnect Project ID is not set. " +
+    "Add VITE_WALLETCONNECT_PROJECT_ID to your .env file. " +
+    "Get a free ID at https://cloud.walletconnect.com"
+  )
+}
+
 const config = getDefaultConfig({
   appName: "Arc Lending",
-  projectId: "775df7cfb6347b857efece8379841330",
+  projectId,
   chains: [arcTestnet],
 })
 

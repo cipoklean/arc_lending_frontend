@@ -9,6 +9,7 @@ import ErrorBanner from "../components/ErrorBanner"
 import ActionButton from "../components/ActionButton"
 import HealthFactor from "../components/HealthFactor"
 import InfoTooltip from "../components/InfoTooltip"
+import WethFaucet from "../components/WethFaucet"
 import { formatUSDC, formatWETH } from "../lib/utils"
 import { Shield, ArrowDownUp, AlertCircle, Info, Activity, Zap } from "lucide-react"
 
@@ -38,9 +39,9 @@ export default function Borrow() {
 
   const [activeTab, setActiveTab] = useState("collateral")
 
-  const [collateralInput, setCollateralInput]               = useState("")
-  const [borrowInput, setBorrowInput]                       = useState("")
-  const [repayInput, setRepayInput]                         = useState("")
+  const [collateralInput, setCollateralInput]                 = useState("")
+  const [borrowInput, setBorrowInput]                         = useState("")
+  const [repayInput, setRepayInput]                           = useState("")
   const [withdrawCollateralInput, setWithdrawCollateralInput] = useState("")
 
   const [collateralStep, setCollateralStep]                 = useState("idle")
@@ -48,28 +49,27 @@ export default function Borrow() {
   const [repayStep, setRepayStep]                           = useState("idle")
   const [withdrawCollateralStep, setWithdrawCollateralStep] = useState("idle")
 
-  const [collateralSuccess, setCollateralSuccess]           = useState("")
-  const [borrowSuccess, setBorrowSuccess]                   = useState("")
-  const [repaySuccess, setRepaySuccess]                     = useState("")
-  const [withdrawCollateralSuccess, setWithdrawCollateralSuccess] = useState("")
+  const [collateralSuccess, setCollateralSuccess]                   = useState("")
+  const [borrowSuccess, setBorrowSuccess]                           = useState("")
+  const [repaySuccess, setRepaySuccess]                             = useState("")
+  const [withdrawCollateralSuccess, setWithdrawCollateralSuccess]   = useState("")
 
-  const [collateralError, setCollateralError]               = useState("")
-  const [borrowError, setBorrowError]                       = useState("")
-  const [repayError, setRepayError]                         = useState("")
+  const [collateralError, setCollateralError]                 = useState("")
+  const [borrowError, setBorrowError]                         = useState("")
+  const [repayError, setRepayError]                           = useState("")
   const [withdrawCollateralError, setWithdrawCollateralError] = useState("")
 
   const [lastTxHash, setLastTxHash] = useState(null)
 
-  const wethBalanceFormatted    = formatWETH(wethBalance)
-  const collateralFormatted     = formatWETH(collateralAmount)
-  const maxBorrowFormatted      = formatUSDC(maxBorrow)
-  const totalDebtFormatted      = formatUSDC(totalDebt)
-  const usdcBalanceFormatted    = formatUSDC(usdcBalance)
+  const wethBalanceFormatted = formatWETH(wethBalance)
+  const collateralFormatted  = formatWETH(collateralAmount)
+  const maxBorrowFormatted   = formatUSDC(maxBorrow)
+  const totalDebtFormatted   = formatUSDC(totalDebt)
+  const usdcBalanceFormatted = formatUSDC(usdcBalance)
 
-  const needsWethApproval   = wethAllowance < BigInt(Math.floor(parseFloat(collateralInput || "0") * 1e18))
-  const needsRepayApproval  = usdcAllowance < BigInt(Math.floor(parseFloat(repayInput || "0") * 1e6))
+  const needsWethApproval  = wethAllowance < BigInt(Math.floor(parseFloat(collateralInput || "0") * 1e18))
+  const needsRepayApproval = usdcAllowance < BigInt(Math.floor(parseFloat(repayInput || "0") * 1e6))
 
-  /* estimated borrow cost per year */
   const estimatedYearlyCost =
     borrowInput && parseFloat(borrowInput) > 0
       ? (parseFloat(borrowInput) * (Number(borrowAPY) / 100)).toFixed(4)
@@ -78,12 +78,12 @@ export default function Borrow() {
   function parseError(err) {
     const msg = err?.message || ""
     if (msg.includes("User rejected") || msg.includes("user rejected")) return "You rejected the transaction."
-    if (msg.includes("insufficient funds"))        return "Insufficient funds for gas."
-    if (msg.includes("Exceeds borrow limit"))       return "Amount exceeds your maximum borrow limit."
+    if (msg.includes("insufficient funds"))         return "Insufficient funds for gas."
+    if (msg.includes("Exceeds borrow limit"))        return "Amount exceeds your maximum borrow limit."
     if (msg.includes("Insufficient pool liquidity")) return "Not enough liquidity in the pool right now."
-    if (msg.includes("No collateral deposited"))    return "You need to deposit collateral before borrowing."
-    if (msg.includes("Must repay all debt first"))  return "You must repay all debt before withdrawing collateral."
-    if (msg.includes("Insufficient collateral"))    return "Not enough collateral to withdraw that amount."
+    if (msg.includes("No collateral deposited"))     return "You need to deposit collateral before borrowing."
+    if (msg.includes("Must repay all debt first"))   return "You must repay all debt before withdrawing collateral."
+    if (msg.includes("Insufficient collateral"))     return "Not enough collateral to withdraw that amount."
     return "Something went wrong. Please try again."
   }
 
@@ -140,7 +140,6 @@ export default function Borrow() {
     setCollateralSuccess(""); setBorrowSuccess(""); setRepaySuccess(""); setWithdrawCollateralSuccess("")
   }
 
-  /* ── reusable panel card style ── */
   const panelStyle = {
     width: "100%",
     boxSizing: "border-box",
@@ -186,7 +185,6 @@ export default function Borrow() {
   }
 
   return (
-    /* ── Outer wrapper ── */
     <div
       style={{
         width: "100%",
@@ -200,13 +198,16 @@ export default function Borrow() {
       }}
     >
 
-      {/* ── Page heading ── */}
+      {/* Page heading */}
       <div>
         <h1 style={{ color: "white", fontWeight: "bold", fontSize: "30px", marginBottom: "8px" }}>Borrow USDC</h1>
         <p style={{ color: "#9ca3af", fontSize: "15px" }}>Deposit WETH as collateral and borrow up to 75% of its value in USDC.</p>
       </div>
 
-      {/* ── Stats row — 4 equal columns — full width ── */}
+      {/* ── WETH FAUCET BANNER ── */}
+      <WethFaucet onSuccess={refetch} />
+
+      {/* Stats row */}
       <div
         style={{
           display: "grid",
@@ -217,10 +218,10 @@ export default function Borrow() {
         }}
       >
         {[
-          { label: "Borrow APY",  value: `${borrowAPY.toFixed(2)}%`,    color: "#eab308", tooltip: "Annual interest rate you pay on borrowed USDC." },
-          { label: "Max Borrow",  value: `$${maxBorrowFormatted}`,       color: "white",   tooltip: "Maximum USDC you can borrow based on 75% LTV ratio." },
-          { label: "Your Debt",   value: `$${totalDebtFormatted}`,       color: "white"   },
-          { label: "Collateral",  value: `${collateralFormatted} WETH`,  color: "white"   },
+          { label: "Borrow APY", value: `${borrowAPY.toFixed(2)}%`,   color: "#eab308", tooltip: "Annual interest rate you pay on borrowed USDC." },
+          { label: "Max Borrow", value: `$${maxBorrowFormatted}`,      color: "white",   tooltip: "Maximum USDC you can borrow based on 75% LTV ratio." },
+          { label: "Your Debt",  value: `$${totalDebtFormatted}`,      color: "white" },
+          { label: "Collateral", value: `${collateralFormatted} WETH`, color: "white" },
         ].map((s, i) => (
           <div
             key={i}
@@ -240,16 +241,14 @@ export default function Borrow() {
         ))}
       </div>
 
-      {/* ── Health factor — full width, above the two-column split ── */}
+      {/* Health factor */}
       {totalDebt > 0n && (
         <div style={{ width: "100%", boxSizing: "border-box" }}>
           <HealthFactor value={healthFactor} />
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════
-          TWO-COLUMN LAYOUT: 60% form  |  38% info panel
-      ══════════════════════════════════════════════ */}
+      {/* Two-column layout */}
       <div
         style={{
           display: "flex",
@@ -260,7 +259,7 @@ export default function Borrow() {
         }}
       >
 
-        {/* ── LEFT COLUMN — 60% — tabs + form panels ── */}
+        {/* LEFT COLUMN */}
         <div
           style={{
             width: "60%",
@@ -271,17 +270,8 @@ export default function Borrow() {
             boxSizing: "border-box",
           }}
         >
-
           {/* Tab buttons */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: "10px",
-              width: "100%",
-              boxSizing: "border-box",
-            }}
-          >
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", width: "100%", boxSizing: "border-box" }}>
             {TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -289,12 +279,8 @@ export default function Borrow() {
                 style={{
                   width: "100%", padding: "12px 8px", borderRadius: "12px",
                   fontSize: "13px", fontWeight: "500", cursor: "pointer",
-                  border: activeTab === tab.id
-                    ? "1px solid rgba(74,222,128,0.3)"
-                    : "1px solid rgba(255,255,255,0.08)",
-                  backgroundColor: activeTab === tab.id
-                    ? "rgba(74,222,128,0.1)"
-                    : "rgba(255,255,255,0.02)",
+                  border: activeTab === tab.id ? "1px solid rgba(74,222,128,0.3)" : "1px solid rgba(255,255,255,0.08)",
+                  backgroundColor: activeTab === tab.id ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.02)",
                   color: activeTab === tab.id ? "#4ade80" : "#9ca3af",
                   boxSizing: "border-box",
                 }}
@@ -304,7 +290,7 @@ export default function Borrow() {
             ))}
           </div>
 
-          {/* ── Deposit Collateral panel ── */}
+          {/* Deposit Collateral */}
           {activeTab === "collateral" && (
             <div style={panelStyle}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -330,7 +316,7 @@ export default function Borrow() {
                 </div>
               )}
               <SuccessBanner message={collateralSuccess} txHash={lastTxHash} onClose={() => setCollateralSuccess("")} />
-              <ErrorBanner   message={collateralError}   onClose={() => setCollateralError("")} />
+              <ErrorBanner message={collateralError} onClose={() => setCollateralError("")} />
               <ActionButton
                 onClick={handleDepositCollateral}
                 disabled={!collateralInput || parseFloat(collateralInput || "0") <= 0}
@@ -342,7 +328,7 @@ export default function Borrow() {
             </div>
           )}
 
-          {/* ── Borrow panel ── */}
+          {/* Borrow */}
           {activeTab === "borrow" && (
             <div style={panelStyle}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -366,26 +352,17 @@ export default function Borrow() {
                 label="Borrow Amount" token="USDC"
                 value={borrowInput} onChange={setBorrowInput}
                 balance={`Max: $${maxBorrowFormatted}`} maxAmount={maxBorrowFormatted}
-                hint={borrowInput && parseFloat(borrowInput) > 0
-                  ? `Borrow APY: ${borrowAPY.toFixed(2)}% per year`
-                  : ""}
+                hint={borrowInput && parseFloat(borrowInput) > 0 ? `Borrow APY: ${borrowAPY.toFixed(2)}% per year` : ""}
               />
               {estimatedYearlyCost && (
-                <div
-                  style={{
-                    backgroundColor: "rgba(234,179,8,0.05)",
-                    border: "1px solid rgba(234,179,8,0.15)",
-                    borderRadius: "10px",
-                    padding: "12px 14px",
-                  }}
-                >
+                <div style={{ backgroundColor: "rgba(234,179,8,0.05)", border: "1px solid rgba(234,179,8,0.15)", borderRadius: "10px", padding: "12px 14px" }}>
                   <p style={{ color: "#6b7280", fontSize: "11px", marginBottom: "3px" }}>Estimated yearly interest cost</p>
                   <p style={{ color: "#eab308", fontWeight: "700", fontSize: "16px" }}>~${estimatedYearlyCost} USDC</p>
                   <p style={{ color: "#6b7280", fontSize: "11px", marginTop: "2px" }}>for {borrowInput} USDC borrowed</p>
                 </div>
               )}
               <SuccessBanner message={borrowSuccess} txHash={lastTxHash} onClose={() => setBorrowSuccess("")} />
-              <ErrorBanner   message={borrowError}   onClose={() => setBorrowError("")} />
+              <ErrorBanner message={borrowError} onClose={() => setBorrowError("")} />
               <ActionButton
                 onClick={handleBorrow}
                 disabled={!borrowInput || parseFloat(borrowInput || "0") <= 0 || collateralAmount === 0n}
@@ -397,7 +374,7 @@ export default function Borrow() {
             </div>
           )}
 
-          {/* ── Repay panel ── */}
+          {/* Repay */}
           {activeTab === "repay" && (
             <div style={panelStyle}>
               <h3 style={{ color: "white", fontWeight: "600", fontSize: "18px" }}>Repay USDC</h3>
@@ -423,7 +400,7 @@ export default function Borrow() {
                 </div>
               )}
               <SuccessBanner message={repaySuccess} txHash={lastTxHash} onClose={() => setRepaySuccess("")} />
-              <ErrorBanner   message={repayError}   onClose={() => setRepayError("")} />
+              <ErrorBanner message={repayError} onClose={() => setRepayError("")} />
               <ActionButton
                 onClick={handleRepay}
                 disabled={!repayInput || parseFloat(repayInput || "0") <= 0 || totalDebt === 0n}
@@ -435,7 +412,7 @@ export default function Borrow() {
             </div>
           )}
 
-          {/* ── Withdraw Collateral panel ── */}
+          {/* Withdraw Collateral */}
           {activeTab === "withdraw-collateral" && (
             <div style={panelStyle}>
               <h3 style={{ color: "white", fontWeight: "600", fontSize: "18px" }}>Withdraw Collateral</h3>
@@ -457,7 +434,7 @@ export default function Borrow() {
                 balance={`Collateral: ${collateralFormatted}`} maxAmount={collateralFormatted}
               />
               <SuccessBanner message={withdrawCollateralSuccess} txHash={lastTxHash} onClose={() => setWithdrawCollateralSuccess("")} />
-              <ErrorBanner   message={withdrawCollateralError}   onClose={() => setWithdrawCollateralError("")} />
+              <ErrorBanner message={withdrawCollateralError} onClose={() => setWithdrawCollateralError("")} />
               <ActionButton
                 onClick={handleWithdrawCollateral}
                 disabled={!withdrawCollateralInput || parseFloat(withdrawCollateralInput || "0") <= 0 || totalDebt > 0n}
@@ -468,11 +445,9 @@ export default function Borrow() {
               />
             </div>
           )}
-
         </div>
-        {/* end left column */}
 
-        {/* ── RIGHT COLUMN — 38% — sticky info panel ── */}
+        {/* RIGHT COLUMN */}
         <div
           style={{
             width: "38%",
@@ -486,112 +461,66 @@ export default function Borrow() {
             boxSizing: "border-box",
           }}
         >
-
           {/* Live Borrow Stats */}
-          <div
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              backgroundColor: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "16px",
-              overflow: "hidden",
-              borderTop: "3px solid #4ade80",
-            }}
-          >
+          <div style={{ width: "100%", boxSizing: "border-box", backgroundColor: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", overflow: "hidden", borderTop: "3px solid #4ade80" }}>
             <div style={{ padding: "18px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: "8px" }}>
               <Activity size={15} color="#4ade80" />
               <h3 style={{ color: "white", fontWeight: "600", fontSize: "14px" }}>Live Pool Stats</h3>
             </div>
-
             <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
-
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ color: "#9ca3af", fontSize: "13px" }}>Borrow APY</span>
                 <span style={{ color: "#eab308", fontWeight: "700", fontSize: "16px" }}>{borrowAPY.toFixed(2)}%</span>
               </div>
               <div style={{ height: "1px", backgroundColor: "rgba(255,255,255,0.05)" }} />
-
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ color: "#9ca3af", fontSize: "13px" }}>Supply APY</span>
                 <span style={{ color: "#4ade80", fontWeight: "700", fontSize: "16px" }}>{supplyAPY.toFixed(4)}%</span>
               </div>
               <div style={{ height: "1px", backgroundColor: "rgba(255,255,255,0.05)" }} />
-
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ color: "#9ca3af", fontSize: "13px" }}>Max Borrow</span>
                 <span style={{ color: "white", fontWeight: "600", fontSize: "14px" }}>${maxBorrowFormatted}</span>
               </div>
               <div style={{ height: "1px", backgroundColor: "rgba(255,255,255,0.05)" }} />
-
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ color: "#9ca3af", fontSize: "13px" }}>Total Borrowed</span>
                 <span style={{ color: "white", fontWeight: "600", fontSize: "14px" }}>${formatUSDC(totalBorrowed)}</span>
               </div>
               <div style={{ height: "1px", backgroundColor: "rgba(255,255,255,0.05)" }} />
-
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ color: "#9ca3af", fontSize: "13px" }}>Total Supplied</span>
                 <span style={{ color: "white", fontWeight: "600", fontSize: "14px" }}>${formatUSDC(totalSupplied)}</span>
               </div>
               <div style={{ height: "1px", backgroundColor: "rgba(255,255,255,0.05)" }} />
-
-              {/* Utilization bar */}
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                   <span style={{ color: "#9ca3af", fontSize: "13px" }}>Utilization</span>
                   <span style={{ color: "#4ade80", fontWeight: "600", fontSize: "14px" }}>{utilization.toFixed(2)}%</span>
                 </div>
                 <div style={{ height: "6px", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: "999px", overflow: "hidden" }}>
-                  <div
-                    style={{
-                      height: "100%",
-                      width: `${Math.min(utilization, 100)}%`,
-                      background: "linear-gradient(90deg, #4ade80, #22d3ee)",
-                      borderRadius: "999px",
-                      transition: "width 0.5s ease",
-                      minWidth: utilization > 0 ? "4px" : "0",
-                    }}
-                  />
+                  <div style={{ height: "100%", width: `${Math.min(utilization, 100)}%`, background: "linear-gradient(90deg, #4ade80, #22d3ee)", borderRadius: "999px", transition: "width 0.5s ease", minWidth: utilization > 0 ? "4px" : "0" }} />
                 </div>
               </div>
-
-              {/* Collateral summary */}
               {collateralAmount > 0n && (
                 <>
                   <div style={{ height: "1px", backgroundColor: "rgba(255,255,255,0.05)" }} />
                   <div style={{ backgroundColor: "rgba(34,211,238,0.05)", border: "1px solid rgba(34,211,238,0.15)", borderRadius: "10px", padding: "12px 14px" }}>
                     <p style={{ color: "#6b7280", fontSize: "11px", marginBottom: "4px" }}>Your collateral value</p>
-                    <p style={{ color: "#22d3ee", fontWeight: "700", fontSize: "18px" }}>
-                      ${(parseFloat(collateralFormatted) * 2000).toFixed(2)}
-                    </p>
-                    <p style={{ color: "#6b7280", fontSize: "11px", marginTop: "2px" }}>
-                      {collateralFormatted} WETH @ $2,000
-                    </p>
+                    <p style={{ color: "#22d3ee", fontWeight: "700", fontSize: "18px" }}>${(parseFloat(collateralFormatted) * 2000).toFixed(2)}</p>
+                    <p style={{ color: "#6b7280", fontSize: "11px", marginTop: "2px" }}>{collateralFormatted} WETH @ $2,000</p>
                   </div>
                 </>
               )}
-
             </div>
           </div>
 
-          {/* Good to Know card */}
-          <div
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              backgroundColor: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "16px",
-              overflow: "hidden",
-              borderTop: "3px solid #4ade80",
-            }}
-          >
+          {/* Good to Know */}
+          <div style={{ width: "100%", boxSizing: "border-box", backgroundColor: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "16px", overflow: "hidden", borderTop: "3px solid #4ade80" }}>
             <div style={{ padding: "18px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: "8px" }}>
               <Info size={15} color="#4ade80" />
               <h3 style={{ color: "white", fontWeight: "600", fontSize: "14px" }}>Good to Know</h3>
             </div>
-
             <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
               {[
                 { icon: "✓", color: "#4ade80", text: "Maximum LTV is 75% — borrow up to $1,500 for every 1 WETH deposited" },
@@ -601,9 +530,7 @@ export default function Borrow() {
                 { icon: "!", color: "#eab308", text: "Testnet only. Do not use real funds." },
               ].map((item, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                  <span style={{ color: item.color, fontSize: "13px", flexShrink: 0, marginTop: "1px", fontWeight: "bold" }}>
-                    {item.icon}
-                  </span>
+                  <span style={{ color: item.color, fontSize: "13px", flexShrink: 0, marginTop: "1px", fontWeight: "bold" }}>{item.icon}</span>
                   <p style={{ color: "#9ca3af", fontSize: "13px", lineHeight: 1.65 }}>{item.text}</p>
                 </div>
               ))}
@@ -611,34 +538,17 @@ export default function Borrow() {
           </div>
 
           {/* Tip */}
-          <div
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              backgroundColor: "rgba(74,222,128,0.04)",
-              border: "1px solid rgba(74,222,128,0.15)",
-              borderRadius: "12px",
-              padding: "14px 16px",
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "10px",
-            }}
-          >
+          <div style={{ width: "100%", boxSizing: "border-box", backgroundColor: "rgba(74,222,128,0.04)", border: "1px solid rgba(74,222,128,0.15)", borderRadius: "12px", padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: "10px" }}>
             <Zap size={15} color="#4ade80" style={{ flexShrink: 0, marginTop: "2px" }} />
             <p style={{ color: "#6b7280", fontSize: "12px", lineHeight: 1.65 }}>
               <span style={{ color: "#4ade80", fontWeight: "600" }}>Tip: </span>
               Your health factor decreases as you borrow more. Keep it above{" "}
-              <span style={{ color: "#9ca3af", fontWeight: "600" }}>1.5</span> to avoid
-              liquidation risk.
+              <span style={{ color: "#9ca3af", fontWeight: "600" }}>1.5</span> to avoid liquidation risk.
             </p>
           </div>
-
         </div>
-        {/* end right column */}
 
       </div>
-      {/* end two-column layout */}
-
     </div>
   )
 }
