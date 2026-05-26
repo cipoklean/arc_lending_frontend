@@ -1,5 +1,6 @@
 {
-  "name": "arc_lending_frontend",
+  "name": "Arclen",
+  "description": "Decentralized lending and borrowing on Arc Network",
   "private": true,
   "version": "0.0.0",
   "type": "module",
