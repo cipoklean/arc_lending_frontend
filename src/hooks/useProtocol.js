@@ -29,8 +29,8 @@ export function useProtocol() {
       ? Number((totalBorrowed * 10000n) / totalSupplied) / 100
       : 0
 
-  const supplyAPY = Number(supplyRate) / 1e16
-  const borrowAPY = Number(borrowRate) / 1e16
+  const supplyAPY = (Number(supplyRate) / 1e18) * 100
+  const borrowAPY = (Number(borrowRate) / 1e18) * 100
 
   return {
     totalSupplied,
