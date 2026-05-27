@@ -21,15 +21,14 @@ export function useProtocol() {
 
   const totalSupplied = data?.[0]?.result || 0n
   const totalBorrowed = data?.[1]?.result || 0n
-  const supplyRate = data?.[2]?.result || 0n
-  const borrowRate = data?.[3]?.result || 0n
+  const supplyRate    = data?.[2]?.result || 0n
+  const borrowRate    = data?.[3]?.result || 0n
 
   const utilization =
     totalSupplied > 0n
       ? Number((totalBorrowed * 10000n) / totalSupplied) / 100
       : 0
 
-  // Format rates as readable percentages for display
   const supplyAPY = Number(supplyRate) / 1e16
   const borrowAPY = Number(borrowRate) / 1e16
 

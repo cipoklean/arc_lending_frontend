@@ -19,58 +19,15 @@ export function useUserData() {
     abi: CONTRACTS.MockWETH.abi,
   }
 
-  const { data, isLoading, refetch } = useReadContracts({
+  // Call 1 — LendingPool data
+  const { data: poolData, isLoading: poolLoading, refetch: refetchPool } = useReadContracts({
     contracts: [
-      {
-        ...lendingPoolConfig,
-        functionName: "getSupplyBalance",
-        args: [address],
-      },
-      {
-        ...lendingPoolConfig,
-        functionName: "getTotalDebt",
-        args: [address],
-      },
-      {
-        ...lendingPoolConfig,
-        functionName: "getHealthFactor",
-        args: [address],
-      },
-      {
-        ...lendingPoolConfig,
-        functionName: "getMaxBorrow",
-        args: [address],
-      },
-      {
-        ...lendingPoolConfig,
-        functionName: "borrows",
-        args: [address],
-      },
-      {
-        ...usdcConfig,
-        functionName: "balanceOf",
-        args: [address],
-      },
-      {
-        ...wethConfig,
-        functionName: "balanceOf",
-        args: [address],
-      },
-      {
-        ...usdcConfig,
-        functionName: "allowance",
-        args: [address, CONTRACTS.LendingPool.address],
-      },
-      {
-        ...wethConfig,
-        functionName: "allowance",
-        args: [address, CONTRACTS.LendingPool.address],
-      },
-      {
-        ...lendingPoolConfig,
-        functionName: "supplies",
-        args: [address],
-      },
+      { ...lendingPoolConfig, functionName: "getSupplyBalance", args: [address] },
+      { ...lendingPoolConfig, functionName: "getTotalDebt", args: [address] },
+      { ...lendingPoolConfig, functionName: "getHealthFactor", args: [address] },
+      { ...lendingPoolConfig, functionName: "getMaxBorrow", args: [address] },
+      { ...lendingPoolConfig, functionName: "borrows", args: [address] },
+      { ...lendingPoolConfig, functionName: "supplies", args: [address] },
     ],
     query: {
       enabled: isConnected && !!address,
@@ -78,21 +35,40 @@ export function useUserData() {
     },
   })
 
-  const supplyBalance = data?.[0]?.result || 0n
-  const totalDebt = data?.[1]?.result || 0n
-  const healthFactor = data?.[2]?.result || 0n
-  const maxBorrow = data?.[3]?.result || 0n
-  const borrowPosition = data?.[4]?.result
-  const usdcBalance = data?.[5]?.result || 0n
-  const wethBalance = data?.[6]?.result || 0n
-  const usdcAllowance = data?.[7]?.result || 0n
-  const wethAllowance = data?.[8]?.result || 0n
-  const supplyPosition = data?.[9]?.result
+  // Call 2 — Token balances only (no allowance for native USDC)
+  const { data: tokenData, isLoading: tokenLoading } = useReadContracts({
+    contracts: [
+      { ...usdcConfig, functionName: "balanceOf", args: [address] },
+      { ...wethConfig, functionName: "balanceOf", args: [address] },
+      { ...wethConfig, functionName: "allowance", args: [address, CONTRACTS.LendingPool.address] },
+    ],
+    query: {
+      enabled: isConnected && !!address,
+      refetchInterval: 5000,
+    },
+  })
+
+  // Map results
+  const supplyBalance  = poolData?.[0]?.result || 0n
+  const totalDebt      = poolData?.[1]?.result || 0n
+  const healthFactor   = poolData?.[2]?.result || 0n
+  const maxBorrow      = poolData?.[3]?.result || 0n
+  const borrowPosition = poolData?.[4]?.result
+  const supplyPosition = poolData?.[5]?.result
+  const usdcBalance    = tokenData?.[0]?.result || 0n
+  const wethBalance    = tokenData?.[1]?.result || 0n
+  const wethAllowance  = tokenData?.[2]?.result || 0n
+
+  // Native USDC doesn't need allowance check — treat as always approved
+  const usdcAllowance = BigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935")
 
   const collateralAmount = borrowPosition?.[0] || 0n
-  const collateralAsset = borrowPosition?.[1] || ""
-  const borrowedAmount = borrowPosition?.[2] || 0n
-  const supplyAmount = supplyPosition?.[0] || 0n
+  const collateralAsset  = borrowPosition?.[1] || ""
+  const borrowedAmount   = borrowPosition?.[2] || 0n
+  const supplyAmount     = supplyPosition?.[0] || 0n
+
+  const isLoading = poolLoading || tokenLoading
+  const refetch = () => { refetchPool() }
 
   return {
     address,

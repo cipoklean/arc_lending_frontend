@@ -102,24 +102,31 @@ export default function Borrow() {
   async function handleBorrow() {
     if (!borrowInput || parseFloat(borrowInput) <= 0) return setBorrowError("Please enter a valid amount.")
     setBorrowError(""); setBorrowSuccess(""); setLastTxHash(null)
+
+    
+    const borrowAmountNum = parseFloat(borrowInput)
+    const maxBorrowNum = parseFloat(formatUSDC(maxBorrow))
+    if (borrowAmountNum > maxBorrowNum) {
+      setBorrowError(
+        `Exceeds borrow limit — maximum you can borrow is $${maxBorrowNum.toFixed(2)} USDC based on your collateral`
+      )
+      return
+    }
+
+    const availableLiquidity = parseFloat(formatUSDC(totalSupplied - totalBorrowed))
+    if (borrowAmountNum > availableLiquidity) {
+      setBorrowError(
+        `Insufficient pool liquidity — only $${availableLiquidity.toFixed(2)} USDC available in the pool`
+      )
+      return
+    }
+
     try {
       setBorrowStep("borrowing")
-      const hash = await borrow(borrowInput)
+      const hash = await borrow(borrowInput, maxBorrow)
       setLastTxHash(hash); setBorrowStep("idle"); setBorrowInput("")
       setBorrowSuccess(`Successfully borrowed ${borrowInput} USDC.`); refetch()
     } catch (err) { setBorrowError(parseError(err)); setBorrowStep("idle") }
-  }
-
-  async function handleRepay() {
-    if (!repayInput || parseFloat(repayInput) <= 0) return setRepayError("Please enter a valid amount.")
-    setRepayError(""); setRepaySuccess(""); setLastTxHash(null)
-    try {
-      if (needsRepayApproval) { setRepayStep("approving"); await approveRepay(repayInput) }
-      setRepayStep("repaying")
-      const hash = await repay(repayInput)
-      setLastTxHash(hash); setRepayStep("idle"); setRepayInput("")
-      setRepaySuccess(`Successfully repaid ${repayInput} USDC.`); refetch()
-    } catch (err) { setRepayError(parseError(err)); setRepayStep("idle") }
   }
 
   async function handleWithdrawCollateral() {
@@ -139,6 +146,29 @@ export default function Borrow() {
     setCollateralError(""); setBorrowError(""); setRepayError(""); setWithdrawCollateralError("")
     setCollateralSuccess(""); setBorrowSuccess(""); setRepaySuccess(""); setWithdrawCollateralSuccess("")
   }
+
+  async function handleRepay() {
+  if (!repayInput || parseFloat(repayInput) <= 0) return setRepayError("Please enter a valid amount.")
+  setRepayError(""); setRepaySuccess(""); setLastTxHash(null)
+
+  const repayAmountNum = parseFloat(repayInput)
+  const totalDebtNum = parseFloat(formatUSDC(totalDebt))
+
+  if (repayAmountNum > totalDebtNum) {
+    setRepayError(
+      `Amount exceeds your debt — you only owe $${totalDebtNum.toFixed(2)} USDC`
+    )
+    return
+  }
+
+  try {
+    if (needsRepayApproval) { setRepayStep("approving"); await approveRepay(repayInput) }
+    setRepayStep("repaying")
+    const hash = await repay(repayInput)
+    setLastTxHash(hash); setRepayStep("idle"); setRepayInput("")
+    setRepaySuccess(`Successfully repaid ${repayInput} USDC.`); refetch()
+  } catch (err) { setRepayError(parseError(err)); setRepayStep("idle") }
+}
 
   const panelStyle = {
     width: "100%",
