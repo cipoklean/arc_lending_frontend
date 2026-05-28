@@ -5,6 +5,8 @@ import Supply from "./pages/Supply"
 import Borrow from "./pages/Borrow"
 import Positions from "./pages/Positions"
 import { LayoutDashboard, TrendingUp, ArrowDownUp, Wallet, Menu, X } from "lucide-react"
+import BridgeButton from "./components/BridgeButton"
+import UnifiedBalance from "./components/UnifiedBalance"
 
 const NAV_ITEMS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -14,7 +16,7 @@ const NAV_ITEMS = [
 ]
 
 export default function App() {
-  const [activePage, setActivePage]       = useState("dashboard")
+  const [activePage, setActivePage]         = useState("dashboard")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   /* listen for arc:navigate events fired by child pages */
@@ -67,10 +69,10 @@ export default function App() {
           backdropFilter: "blur(12px)",
         }}
       >
-        {/* NAV — full width, no max-width on nav itself */}
+        {/* NAV — full width */}
         <nav style={{ width: "100%", maxWidth: "100%" }}>
 
-          {/* Inner wrapper — centred, capped at 1400px */}
+          {/* Inner wrapper */}
           <div
             style={{
               width: "100%",
@@ -107,7 +109,7 @@ export default function App() {
               </div>
               <div>
                 <div style={{ color: "white", fontWeight: "bold", fontSize: "16px", lineHeight: 1 }}>
-                  Arc Lending
+                  Arclen
                 </div>
                 <div style={{ color: "#6b7280", fontSize: "12px", marginTop: "2px" }}>
                   Testnet
@@ -159,8 +161,10 @@ export default function App() {
               })}
             </div>
 
-            {/* Right side — wallet + hamburger */}
+            {/* Right side — Bridge + UnifiedBalance + wallet + hamburger */}
             <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+              <UnifiedBalance />
+              <BridgeButton />
               <ConnectButton />
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -233,6 +237,16 @@ export default function App() {
                   </button>
                 )
               })}
+
+              {/* Mobile Bridge + Unified Balance */}
+              <div style={{
+                display: "flex", gap: 10, padding: "8px 0",
+                borderTop: "1px solid rgba(255,255,255,0.06)",
+                marginTop: 4,
+              }}>
+                <UnifiedBalance />
+                <BridgeButton />
+              </div>
             </div>
           </div>
         )}
@@ -290,7 +304,7 @@ export default function App() {
               AL
             </div>
             <span style={{ color: "#9ca3af", fontWeight: "500", fontSize: "13px" }}>
-              Arc Lending Protocol
+              Arclen Protocol
             </span>
           </div>
           <p style={{ color: "#4b5563", fontSize: "12px" }}>
