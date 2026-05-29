@@ -8,46 +8,109 @@ export default function TokenInput({
   placeholder = "0.00",
   hint,
 }) {
-  function handleMax() {
-    if (maxAmount !== undefined) {
-      onChange(String(maxAmount))
-    }
+ 
+  const max = parseFloat(maxAmount) || 0
+
+  function handlePercent(pct) {
+    if (!max || max <= 0) return
+    const amount = (max * pct) / 100
+    // Round to 6 decimal places to avoid floating point issues
+    onChange(parseFloat(amount.toFixed(6)).toString())
   }
 
   return (
-    <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4 focus-within:border-green-500/40 transition-all w-full">
-      <div className="flex items-center justify-between mb-2 gap-2">
-        <label className="text-xs text-gray-400 font-medium shrink-0">{label}</label>
+    <div
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 14,
+        padding: 16,
+        width: "100%",
+        boxSizing: "border-box",
+        transition: "border-color 0.2s ease",
+      }}
+    >
+      {/* Label + Balance row */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <label style={{ color: "#9CA3AF", fontSize: "0.75rem", fontWeight: 500 }}>
+          {label}
+        </label>
         {balance !== undefined && (
-          <span className="text-xs text-gray-500 truncate text-right">
-            Balance: <span className="text-gray-300">{balance}</span>
+          <span style={{ color: "#6B7280", fontSize: "0.75rem" }}>
+            Balance: <span style={{ color: "#D1D5DB" }}>{balance}</span>
           </span>
         )}
       </div>
-      <div className="flex items-center gap-2 sm:gap-3">
+
+      {/* Input + Token */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
         <input
           type="number"
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="flex-1 bg-transparent text-white text-lg sm:text-xl font-semibold placeholder-gray-600 focus:outline-none min-w-0 w-full"
+          style={{
+            flex: 1,
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            color: "white",
+            fontSize: "1.3rem",
+            fontWeight: 600,
+            minWidth: 0,
+            width: "100%",
+          }}
         />
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {maxAmount !== undefined && (
-            <button
-              onClick={handleMax}
-              className="text-xs px-2 py-1 rounded-lg bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-all font-medium whitespace-nowrap"
-            >
-              MAX
-            </button>
-          )}
-          <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
-            <span className="text-white text-sm font-medium">{token}</span>
-          </div>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "6px 12px",
+          background: "rgba(255,255,255,0.05)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 10,
+          flexShrink: 0,
+        }}>
+          <span style={{ color: "white", fontSize: "0.88rem", fontWeight: 500 }}>{token}</span>
         </div>
       </div>
+
+      {/* Percentage buttons */}
+      {maxAmount !== undefined && max > 0 && (
+        <div style={{ display: "flex", gap: 6 }}>
+          {[25, 50, 75, 100].map((pct) => (
+            <button
+              key={pct}
+              onClick={() => handlePercent(pct)}
+              style={{
+                flex: 1,
+                padding: "5px 0",
+                background: "rgba(74,222,128,0.06)",
+                border: "1px solid rgba(74,222,128,0.15)",
+                borderRadius: 8,
+                color: "#4ade80",
+                fontSize: "0.72rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+                letterSpacing: "0.02em",
+              }}
+              onMouseEnter={e => {
+                e.target.style.background = "rgba(74,222,128,0.15)"
+                e.target.style.borderColor = "rgba(74,222,128,0.35)"
+              }}
+              onMouseLeave={e => {
+                e.target.style.background = "rgba(74,222,128,0.06)"
+                e.target.style.borderColor = "rgba(74,222,128,0.15)"
+              }}
+            >
+              {pct === 100 ? "MAX" : `${pct}%`}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Hint */}
       {hint && (
-        <p className="text-xs text-gray-500 mt-2">{hint}</p>
+        <p style={{ color: "#6B7280", fontSize: "0.75rem", marginTop: 10 }}>{hint}</p>
       )}
     </div>
   )
