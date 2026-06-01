@@ -10,6 +10,7 @@ import ActionButton from "../components/ActionButton"
 import InfoTooltip from "../components/InfoTooltip"
 import { formatUSDC } from "../lib/utils"
 import { TrendingUp, ArrowDownLeft, AlertCircle, Info, Zap, Activity } from "lucide-react"
+import UsdcFaucet from "../components/UsdcFaucet"
 
 export default function Supply() {
   const { isConnected } = useAccount()
@@ -148,7 +149,9 @@ export default function Supply() {
         <p style={{ color: "#9ca3af", fontSize: "15px" }}>
           Deposit USDC to earn interest. Your balance grows automatically every second.
         </p>
+        
       </div>
+      <UsdcFaucet onSuccess={refetch} />
 
       {/* Stats row */}
       <div style={{
