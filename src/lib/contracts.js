@@ -1,6 +1,6 @@
 export const CONTRACTS = {
   LendingPool: {
-    address: "0x34947554f4Be92b14BAB291F500e61c667a62072",
+    address: "0x433A5F548d4cFF7c1A3Aa516E5981A4D6f06E8ac",
     abi: [
       {
         name: "supply",
@@ -131,7 +131,7 @@ export const CONTRACTS = {
   },
 
   MockUSDC: {
-    address: "0x3600000000000000000000000000000000000000",
+    address: "0x9ceCeFe56C72bE0063E7915b04d6C214BADD18c1",
     abi: [
       {
         name: "balanceOf",

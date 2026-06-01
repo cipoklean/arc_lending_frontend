@@ -14,7 +14,6 @@ export default function TokenInput({
   function handlePercent(pct) {
     if (!max || max <= 0) return
     const amount = (max * pct) / 100
-    // Round to 6 decimal places to avoid floating point issues
     onChange(parseFloat(amount.toFixed(6)).toString())
   }
 

@@ -31,7 +31,6 @@ export default function Supply() {
   const [supplyTxHash, setSupplyTxHash]       = useState(null)
   const [withdrawTxHash, setWithdrawTxHash]   = useState(null)
 
-  // Format balances as human-readable strings for TokenInput
   const usdcBalanceFormatted   = formatUSDC(usdcBalance)
   const supplyBalanceFormatted = formatUSDC(supplyBalance > 0n ? supplyBalance : supplyAmount)
 
@@ -241,7 +240,7 @@ export default function Supply() {
                   value={supplyInput}
                   onChange={setSupplyInput}
                   balance={usdcBalanceFormatted}
-                  maxAmount={usdcBalanceFormatted}
+                  maxAmount={Math.max(0, parseFloat(usdcBalanceFormatted) - 0.01).toFixed(6)}
                   hint={estimatedYearly ? `You will earn ~$${estimatedYearly} per year` : ""}
                 />
               </div>

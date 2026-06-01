@@ -3,11 +3,10 @@ import { useWriteContract, useWaitForTransactionReceipt, usePublicClient } from 
 import { CONTRACTS } from "../lib/contracts"
 import { parseUSDC, parseWETH, formatUSDC } from "../lib/utils"
 
-
 function parseContractError(error) {
   const message = error?.message || error?.toString() || ""
-
-
+  if (message.includes("Transaction failed onchain"))
+    return "Transaction failed onchain — check your balance and try again"
   if (message.includes("Insufficient pool liquidity"))
     return "Insufficient pool liquidity — not enough USDC available to borrow"
   if (message.includes("Exceeds borrow limit"))
@@ -34,38 +33,23 @@ function parseContractError(error) {
     return "Transaction cancelled — you rejected the request in your wallet"
   if (message.includes("insufficient funds"))
     return "Insufficient USDC for gas fees — make sure you have enough USDC for gas"
-
-  // Generic fallback
   return "Transaction failed — please try again"
 }
 
 export function useBorrow() {
-  const [txHash, setTxHash] = useState(null)
-  const [lastTx, setLastTx] = useState(null)
-  const [error, setError] = useState(null)
+  const [txHash, setTxHash]   = useState(null)
+  const [lastTx, setLastTx]   = useState(null)
+  const [error, setError]     = useState(null)
   const [success, setSuccess] = useState(null)
   const publicClient = usePublicClient()
 
-  const { writeContractAsync: approveWethAsync, isPending: isApproveWethPending } =
-    useWriteContract()
-
-  const { writeContractAsync: depositCollateralAsync, isPending: isDepositPending } =
-    useWriteContract()
-
-  const { writeContractAsync: borrowAsync, isPending: isBorrowPending } =
-    useWriteContract()
-
-  const { writeContractAsync: repayApproveAsync, isPending: isRepayApprovePending } =
-    useWriteContract()
-
-  const { writeContractAsync: repayAsync, isPending: isRepayPending } =
-    useWriteContract()
-
-  const { writeContractAsync: withdrawCollateralAsync, isPending: isWithdrawCollateralPending } =
-    useWriteContract()
-
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({ hash: lastTx })
+  const { writeContractAsync: approveWethAsync,       isPending: isApproveWethPending       } = useWriteContract()
+  const { writeContractAsync: depositCollateralAsync, isPending: isDepositPending           } = useWriteContract()
+  const { writeContractAsync: borrowAsync,            isPending: isBorrowPending            } = useWriteContract()
+  const { writeContractAsync: repayApproveAsync,      isPending: isRepayApprovePending      } = useWriteContract()
+  const { writeContractAsync: repayAsync,             isPending: isRepayPending             } = useWriteContract()
+  const { writeContractAsync: withdrawCollateralAsync, isPending: isWithdrawCollateralPending } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: lastTx })
 
   function clearMessages() {
     setError(null)
@@ -82,7 +66,8 @@ export function useBorrow() {
         args: [CONTRACTS.LendingPool.address, parseWETH(amount)],
       })
       setTxHash(hash)
-      await publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+      if (receipt.status === "reverted") throw new Error("Transaction failed onchain — please try again")
       return hash
     } catch (err) {
       setError(parseContractError(err))
@@ -101,7 +86,8 @@ export function useBorrow() {
       })
       setTxHash(hash)
       setLastTx(hash)
-      await publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+      if (receipt.status === "reverted") throw new Error("Transaction failed onchain — please try again")
       setSuccess(`Successfully deposited ${amount} WETH as collateral`)
       return hash
     } catch (err) {
@@ -113,16 +99,14 @@ export function useBorrow() {
   async function borrow(amount, maxBorrow) {
     clearMessages()
     try {
-      
       const borrowAmount = parseUSDC(amount)
+
       if (borrowAmount === 0n) {
         setError("Amount must be greater than zero")
         return
       }
       if (maxBorrow && borrowAmount > maxBorrow) {
-        setError(
-          `Exceeds borrow limit — maximum you can borrow is ${formatUSDC(maxBorrow)} USDC based on your collateral`
-        )
+        setError(`Exceeds borrow limit — maximum you can borrow is ${formatUSDC(maxBorrow)} USDC based on your collateral`)
         return
       }
 
@@ -134,7 +118,8 @@ export function useBorrow() {
       })
       setTxHash(hash)
       setLastTx(hash)
-      await publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+      if (receipt.status === "reverted") throw new Error("Transaction failed onchain — please try again")
       setSuccess(`Successfully borrowed ${amount} USDC`)
       return hash
     } catch (err) {
@@ -153,7 +138,8 @@ export function useBorrow() {
         args: [CONTRACTS.LendingPool.address, parseUSDC(amount)],
       })
       setTxHash(hash)
-      await publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+      if (receipt.status === "reverted") throw new Error("Transaction failed onchain — please try again")
       return hash
     } catch (err) {
       setError(parseContractError(err))
@@ -172,7 +158,8 @@ export function useBorrow() {
       })
       setTxHash(hash)
       setLastTx(hash)
-      await publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+      if (receipt.status === "reverted") throw new Error("Transaction failed onchain — please try again")
       setSuccess(`Successfully repaid ${amount} USDC`)
       return hash
     } catch (err) {
@@ -192,7 +179,8 @@ export function useBorrow() {
       })
       setTxHash(hash)
       setLastTx(hash)
-      await publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+      if (receipt.status === "reverted") throw new Error("Transaction failed onchain — please try again")
       setSuccess(`Successfully withdrew ${amount} WETH collateral`)
       return hash
     } catch (err) {

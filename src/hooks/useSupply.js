@@ -3,10 +3,10 @@ import { useWriteContract, useWaitForTransactionReceipt, usePublicClient } from 
 import { CONTRACTS } from "../lib/contracts"
 import { parseUSDC, formatUSDC } from "../lib/utils"
 
-// Extract clean error message from contract revert
 function parseContractError(error) {
   const message = error?.message || error?.toString() || ""
-
+  if (message.includes("Transaction failed onchain"))
+    return "Transaction failed onchain — check your balance and try again"
   if (message.includes("Insufficient balance"))
     return "Insufficient balance — you don't have enough USDC to supply this amount"
   if (message.includes("Insufficient pool liquidity"))
@@ -19,28 +19,20 @@ function parseContractError(error) {
     return "Transaction cancelled — you rejected the request in your wallet"
   if (message.includes("insufficient funds"))
     return "Insufficient USDC for gas fees"
-
   return "Transaction failed — please try again"
 }
 
 export function useSupply() {
-  const [txHash, setTxHash] = useState(null)
-  const [lastTx, setLastTx] = useState(null)
-  const [error, setError] = useState(null)
+  const [txHash, setTxHash]   = useState(null)
+  const [lastTx, setLastTx]   = useState(null)
+  const [error, setError]     = useState(null)
   const [success, setSuccess] = useState(null)
   const publicClient = usePublicClient()
 
-  const { writeContractAsync: approveAsync, isPending: isApprovePending } =
-    useWriteContract()
-
-  const { writeContractAsync: supplyAsync, isPending: isSupplyPending } =
-    useWriteContract()
-
-  const { writeContractAsync: withdrawAsync, isPending: isWithdrawPending } =
-    useWriteContract()
-
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({ hash: lastTx })
+  const { writeContractAsync: approveAsync, isPending: isApprovePending } = useWriteContract()
+  const { writeContractAsync: supplyAsync,  isPending: isSupplyPending  } = useWriteContract()
+  const { writeContractAsync: withdrawAsync, isPending: isWithdrawPending } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: lastTx })
 
   function clearMessages() {
     setError(null)
@@ -70,15 +62,12 @@ export function useSupply() {
     try {
       const supplyAmount = parseUSDC(amount)
 
-      // Pre-flight check
       if (supplyAmount === 0n) {
         setError("Amount must be greater than zero")
         return
       }
       if (usdcBalance && supplyAmount > usdcBalance) {
-        setError(
-          `Insufficient balance — you only have ${formatUSDC(usdcBalance)} USDC in your wallet`
-        )
+        setError(`Insufficient balance — you only have ${formatUSDC(usdcBalance)} USDC in your wallet`)
         return
       }
 
@@ -90,7 +79,12 @@ export function useSupply() {
       })
       setTxHash(hash)
       setLastTx(hash)
-      await publicClient.waitForTransactionReceipt({ hash })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+      if (receipt.status === "reverted") {
+        throw new Error("Transaction failed onchain — please try again")
+      }
+
       setSuccess(`Successfully supplied ${amount} USDC to the pool`)
       return hash
     } catch (err) {
@@ -104,15 +98,12 @@ export function useSupply() {
     try {
       const withdrawAmount = parseUSDC(amount)
 
-      // Pre-flight check
       if (withdrawAmount === 0n) {
         setError("Amount must be greater than zero")
         return
       }
       if (supplyBalance && withdrawAmount > supplyBalance) {
-        setError(
-          `Exceeds supply balance — you can only withdraw up to ${formatUSDC(supplyBalance)} USDC`
-        )
+        setError(`Exceeds supply balance — you can only withdraw up to ${formatUSDC(supplyBalance)} USDC`)
         return
       }
 
@@ -124,7 +115,12 @@ export function useSupply() {
       })
       setTxHash(hash)
       setLastTx(hash)
-      await publicClient.waitForTransactionReceipt({ hash })
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+      if (receipt.status === "reverted") {
+        throw new Error("Transaction failed onchain — please try again")
+      }
+
       setSuccess(`Successfully withdrew ${amount} USDC from the pool`)
       return hash
     } catch (err) {
