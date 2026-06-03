@@ -8,15 +8,15 @@ import SuccessBanner from "../components/SuccessBanner"
 import ErrorBanner from "../components/ErrorBanner"
 import ActionButton from "../components/ActionButton"
 import InfoTooltip from "../components/InfoTooltip"
-import { formatUSDC } from "../lib/utils"
-import { TrendingUp, ArrowDownLeft, AlertCircle, Info, Zap, Activity } from "lucide-react"
 import UsdcFaucet from "../components/UsdcFaucet"
+import { formatUSDC, parseUSDC } from "../lib/utils"
+import { TrendingUp, ArrowDownLeft, AlertCircle, Info, Zap, Activity } from "lucide-react"
 
 export default function Supply() {
   const { isConnected } = useAccount()
-  const { usdcBalance, supplyBalance, supplyAmount, refetch } = useUserData()
-  const { supplyAPY, supplyRate, borrowAPY, totalSupplied, totalBorrowed, utilization } = useProtocol()
-  const { supply, withdraw } = useSupply()
+  const { usdcBalance, supplyBalance, supplyAmount, usdcAllowance, refetch } = useUserData()
+  const { supplyAPY, borrowAPY, totalSupplied, totalBorrowed, utilization } = useProtocol()
+  const { approve, supply, withdraw } = useSupply()
 
   const [supplyInput, setSupplyInput]     = useState("")
   const [withdrawInput, setWithdrawInput] = useState("")
@@ -35,13 +35,18 @@ export default function Supply() {
   const usdcBalanceFormatted   = formatUSDC(usdcBalance)
   const supplyBalanceFormatted = formatUSDC(supplyBalance > 0n ? supplyBalance : supplyAmount)
 
+  // Fix: use supplyAPY (already a percentage) divided by 100
   const estimatedYearly =
-    supplyInput && parseFloat(supplyInput) > 0
-      ? (parseFloat(supplyInput) * (Number(supplyRate) / 1e18)).toFixed(6)
+    supplyInput && parseFloat(supplyInput) > 0 && supplyAPY > 0
+      ? (parseFloat(supplyInput) * (supplyAPY / 100)).toFixed(4)
       : null
+
+  // Check if new wallet needs approval
+  const needsApproval = usdcAllowance < parseUSDC(supplyInput || "0")
 
   function parseError(err) {
     const msg = err?.message || ""
+    if (msg.includes("Transaction failed onchain"))  return "Transaction failed onchain — check your balance and try again."
     if (msg.includes("User rejected") || msg.includes("user rejected")) return "You rejected the transaction."
     if (msg.includes("insufficient funds"))          return "Insufficient funds for gas."
     if (msg.includes("Insufficient balance"))        return "You do not have enough USDC."
@@ -52,8 +57,7 @@ export default function Supply() {
   async function handleSupply() {
     if (!supplyInput || parseFloat(supplyInput) <= 0) return setSupplyError("Please enter a valid amount.")
 
-    // Pre-flight check
-    const supplyNum = parseFloat(supplyInput)
+    const supplyNum  = parseFloat(supplyInput)
     const balanceNum = parseFloat(usdcBalanceFormatted)
     if (supplyNum > balanceNum) {
       return setSupplyError(`Insufficient balance — you only have ${usdcBalanceFormatted} USDC in your wallet`)
@@ -61,6 +65,11 @@ export default function Supply() {
 
     setSupplyError(""); setSupplySuccess(""); setSupplyTxHash(null)
     try {
+      // Approve first if needed (for new wallets)
+      if (needsApproval) {
+        setSupplyStep("approving")
+        await approve(supplyInput)
+      }
       setSupplyStep("supplying")
       const hash = await supply(supplyInput)
       setSupplyTxHash(hash)
@@ -77,9 +86,8 @@ export default function Supply() {
   async function handleWithdraw() {
     if (!withdrawInput || parseFloat(withdrawInput) <= 0) return setWithdrawError("Please enter a valid amount.")
 
-    // Pre-flight check
     const withdrawNum = parseFloat(withdrawInput)
-    const supplyNum = parseFloat(supplyBalanceFormatted)
+    const supplyNum   = parseFloat(supplyBalanceFormatted)
     if (withdrawNum > supplyNum) {
       return setWithdrawError(`Exceeds supply balance — you can only withdraw up to ${supplyBalanceFormatted} USDC`)
     }
@@ -149,8 +157,9 @@ export default function Supply() {
         <p style={{ color: "#9ca3af", fontSize: "15px" }}>
           Deposit USDC to earn interest. Your balance grows automatically every second.
         </p>
-        
       </div>
+
+      {/* USDC Faucet */}
       <UsdcFaucet onSuccess={refetch} />
 
       {/* Stats row */}
@@ -214,7 +223,9 @@ export default function Supply() {
                   color: activeTab === tab ? "#4ade80" : "#9ca3af",
                 }}
               >
-                {tab === "supply" ? <><TrendingUp size={17} /> Supply</> : <><ArrowDownLeft size={17} /> Withdraw</>}
+                {tab === "supply"
+                  ? <><TrendingUp size={17} /> Supply</>
+                  : <><ArrowDownLeft size={17} /> Withdraw</>}
               </button>
             ))}
           </div>
@@ -235,8 +246,6 @@ export default function Supply() {
                 <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "18px" }}>
                   Enter how much USDC you want to deposit into the lending pool.
                 </p>
-
-                {/* TokenInput gets formatted string — 25/50/75/MAX buttons built in */}
                 <TokenInput
                   label="Supply Amount"
                   token="USDC"
@@ -244,19 +253,37 @@ export default function Supply() {
                   onChange={setSupplyInput}
                   balance={usdcBalanceFormatted}
                   maxAmount={Math.max(0, parseFloat(usdcBalanceFormatted) - 0.01).toFixed(6)}
-                  hint={estimatedYearly ? `You will earn ~$${estimatedYearly} per year` : ""}
+                  hint={estimatedYearly
+                    ? `You will earn ~$${estimatedYearly} per year at current APY`
+                    : ""}
                 />
               </div>
 
+              {/* Approval notice for new wallets */}
+              {needsApproval && supplyInput && parseFloat(supplyInput) > 0 && (
+                <div style={{
+                  backgroundColor: "rgba(234,179,8,0.05)",
+                  border: "1px solid rgba(234,179,8,0.2)",
+                  borderRadius: "12px", padding: "16px",
+                }}>
+                  <p style={{ color: "#eab308", fontSize: "14px", fontWeight: "500", marginBottom: "4px" }}>
+                    Two steps required
+                  </p>
+                  <p style={{ color: "#9ca3af", fontSize: "13px" }}>
+                    Step 1: Approve USDC spending → Step 2: Supply USDC
+                  </p>
+                </div>
+              )}
+
               <SuccessBanner message={supplySuccess} txHash={supplyTxHash} onClose={() => setSupplySuccess("")} />
-              <ErrorBanner message={supplyError} onClose={() => setSupplyError("")} />
+              <ErrorBanner   message={supplyError}   onClose={() => setSupplyError("")} />
 
               <ActionButton
                 onClick={handleSupply}
                 disabled={!supplyInput || parseFloat(supplyInput || "0") <= 0}
                 loading={supplyStep !== "idle"}
-                loadingLabel="Supplying..."
-                label="Supply USDC"
+                loadingLabel={supplyStep === "approving" ? "Approving USDC..." : "Supplying..."}
+                label={needsApproval && supplyInput ? "Approve and Supply" : "Supply USDC"}
                 color="green"
               />
             </div>
@@ -278,8 +305,6 @@ export default function Supply() {
                 <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "18px" }}>
                   Withdraw your supplied USDC plus any earned interest.
                 </p>
-
-                {/* TokenInput gets formatted string — 25/50/75/MAX buttons built in */}
                 <TokenInput
                   label="Withdraw Amount"
                   token="USDC"
@@ -291,7 +316,7 @@ export default function Supply() {
               </div>
 
               <SuccessBanner message={withdrawSuccess} txHash={withdrawTxHash} onClose={() => setWithdrawSuccess("")} />
-              <ErrorBanner message={withdrawError} onClose={() => setWithdrawError("")} />
+              <ErrorBanner   message={withdrawError}   onClose={() => setWithdrawError("")} />
 
               <ActionButton
                 onClick={handleWithdraw}
@@ -330,13 +355,12 @@ export default function Supply() {
               <Activity size={15} color="#4ade80" />
               <h3 style={{ color: "white", fontWeight: "600", fontSize: "14px" }}>Live Pool Stats</h3>
             </div>
-
             <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
               {[
-                { label: "Supply APY",     value: `${supplyAPY.toFixed(4)}%`,    color: "#4ade80" },
-                { label: "Borrow APY",     value: `${borrowAPY.toFixed(2)}%`,    color: "#eab308" },
-                { label: "Total Supplied", value: `$${formatUSDC(totalSupplied)}`, color: "white"  },
-                { label: "Total Borrowed", value: `$${formatUSDC(totalBorrowed)}`, color: "white"  },
+                { label: "Supply APY",     value: `${supplyAPY.toFixed(4)}%`,      color: "#4ade80" },
+                { label: "Borrow APY",     value: `${borrowAPY.toFixed(2)}%`,      color: "#eab308" },
+                { label: "Total Supplied", value: `$${formatUSDC(totalSupplied)}`, color: "white"   },
+                { label: "Total Borrowed", value: `$${formatUSDC(totalBorrowed)}`, color: "white"   },
               ].map((item, i) => (
                 <div key={i}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -365,7 +389,7 @@ export default function Supply() {
                 </div>
               </div>
 
-              {/* Estimated yearly earnings */}
+              {/* Estimated yearly earnings in right panel too */}
               {estimatedYearly && (
                 <>
                   <div style={{ height: "1px", backgroundColor: "rgba(255,255,255,0.05)" }} />
@@ -378,7 +402,7 @@ export default function Supply() {
                       Estimated yearly earnings
                     </p>
                     <p style={{ color: "#4ade80", fontWeight: "700", fontSize: "18px" }}>
-                      ~${estimatedYearly}
+                      ~${estimatedYearly} USDC
                     </p>
                     <p style={{ color: "#6b7280", fontSize: "11px", marginTop: "2px" }}>
                       for {supplyInput} USDC supplied

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { getAppKit, getViemAdapter } from "../lib/appKit"
 import { useAccount } from "wagmi"
-import { Layers } from "lucide-react"
+import { Layers, Info } from "lucide-react"
 
 export default function UnifiedBalance() {
   const { isConnected } = useAccount()
@@ -17,14 +17,11 @@ export default function UnifiedBalance() {
     try {
       const kit         = await getAppKit()
       const viemAdapter = await getViemAdapter()
-
-      // Correct method is getBalances (plural) with sources array
       const result = await kit.unifiedBalance.getBalances({
         sources: [{ adapter: viemAdapter }],
         networkType: "testnet",
         includePending: true,
       })
-
       setBalance(result)
     } catch (err) {
       console.error("Unified balance error:", err)
@@ -40,10 +37,10 @@ export default function UnifiedBalance() {
 
   if (!isConnected) return null
 
-  // Parse balance data from SDK response
   const totalConfirmed = balance?.totalConfirmedBalance || "0.00"
   const totalPending   = balance?.totalPendingBalance   || "0.00"
   const breakdown      = balance?.breakdown             || []
+  const isEmpty        = balance && parseFloat(totalConfirmed) === 0 && breakdown.length === 0
 
   return (
     <div style={{ position: "relative" }}>
@@ -65,21 +62,14 @@ export default function UnifiedBalance() {
 
       {showPanel && (
         <>
-          {/* Backdrop */}
-          <div
-            onClick={() => setShowPanel(false)}
-            style={{
-              position: "fixed", inset: 0, zIndex: 98,
-            }}
-          />
+          <div onClick={() => setShowPanel(false)} style={{ position: "fixed", inset: 0, zIndex: 98 }} />
 
-          {/* Panel */}
           <div style={{
             position: "absolute", top: "calc(100% + 8px)", right: 0,
             background: "#0D1117",
             border: "1px solid rgba(0,212,255,0.2)",
             borderRadius: 16, padding: 20,
-            minWidth: 300, zIndex: 99,
+            minWidth: 320, zIndex: 99,
             boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
@@ -96,12 +86,20 @@ export default function UnifiedBalance() {
             )}
 
             {error && (
-              <p style={{ color: "#FF4D6D", fontSize: "0.82rem" }}>⚠️ {error}</p>
+              <div style={{
+                background: "rgba(255,77,109,0.08)",
+                border: "1px solid rgba(255,77,109,0.2)",
+                borderRadius: 10, padding: "12px 14px", marginBottom: 12,
+              }}>
+                <p style={{ color: "#FF4D6D", fontSize: "0.82rem", marginBottom: 6 }}>⚠️ {error}</p>
+                <p style={{ color: "#6B7A8D", fontSize: "0.75rem" }}>
+                  This feature requires the Circle App Kit SDK to be configured with a valid API key.
+                </p>
+              </div>
             )}
 
             {balance && !isLoading && (
               <div>
-                {/* Total */}
                 <div style={{
                   background: "rgba(0,212,255,0.06)",
                   border: "1px solid rgba(0,212,255,0.15)",
@@ -118,17 +116,13 @@ export default function UnifiedBalance() {
                       + ${parseFloat(totalPending).toFixed(2)} pending
                     </p>
                   )}
-                  <p style={{ color: "#6B7A8D", fontSize: "0.72rem", marginTop: 2 }}>
-                    USDC across all chains
-                  </p>
+                  <p style={{ color: "#6B7A8D", fontSize: "0.72rem", marginTop: 2 }}>USDC across all chains</p>
                 </div>
 
-                {/* Breakdown per depositor */}
                 {breakdown.length > 0 && breakdown.map((item, i) => (
                   <div key={i} style={{
                     display: "flex", justifyContent: "space-between",
-                    padding: "8px 0",
-                    borderBottom: "1px solid rgba(255,255,255,0.05)",
+                    padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)",
                   }}>
                     <span style={{ color: "#9CA3AF", fontSize: "0.78rem" }}>
                       {item.depositor
@@ -140,6 +134,30 @@ export default function UnifiedBalance() {
                     </span>
                   </div>
                 ))}
+
+                {/* Empty state — helpful explanation */}
+                {isEmpty && (
+                  <div style={{
+                    background: "rgba(0,212,255,0.04)",
+                    border: "1px solid rgba(0,212,255,0.12)",
+                    borderRadius: 10, padding: "14px",
+                    marginTop: 8,
+                  }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                      <Info size={14} color="#00D4FF" style={{ flexShrink: 0, marginTop: 1 }} />
+                      <div>
+                        <p style={{ color: "#00D4FF", fontSize: "0.78rem", fontWeight: 600, marginBottom: 4 }}>
+                          No cross-chain balance found
+                        </p>
+                        <p style={{ color: "#6B7A8D", fontSize: "0.74rem", lineHeight: 1.6 }}>
+                          Unified Balance shows USDC deposited from other chains
+                          (Ethereum Sepolia, Base Sepolia, etc.) into Circle Gateway.
+                          To use this feature, first bridge USDC from another testnet chain.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
