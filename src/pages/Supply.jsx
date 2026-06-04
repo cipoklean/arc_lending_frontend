@@ -41,7 +41,7 @@ export default function Supply() {
       ? (parseFloat(supplyInput) * (supplyAPY / 100)).toFixed(4)
       : null
 
-  // Check if new wallet needs approval
+  
   const needsApproval = usdcAllowance < parseUSDC(supplyInput || "0")
 
   function parseError(err) {

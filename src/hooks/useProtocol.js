@@ -15,7 +15,7 @@ export function useProtocol() {
       { ...lendingPoolConfig, functionName: "getCurrentBorrowRate" },
     ],
     query: {
-      refetchInterval: 5000,
+      refetchInterval: 10000,
     },
   })
 

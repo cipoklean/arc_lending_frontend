@@ -31,21 +31,21 @@ export function useUserData() {
     ],
     query: {
       enabled: isConnected && !!address,
-      refetchInterval: 5000,
+      refetchInterval: 6000,
     },
   })
 
   // Call 2 — Token balances and allowances
-  const { data: tokenData, isLoading: tokenLoading } = useReadContracts({
+  const { data: tokenData, isLoading: tokenLoading, refetch: refetchToken } = useReadContracts({
     contracts: [
-      { ...usdcConfig, functionName: "balanceOf",  args: [address] },
-      { ...wethConfig, functionName: "balanceOf",  args: [address] },
-      { ...wethConfig, functionName: "allowance",  args: [address, CONTRACTS.LendingPool.address] },
-      { ...usdcConfig, functionName: "allowance",  args: [address, CONTRACTS.LendingPool.address] },
+      { ...usdcConfig, functionName: "balanceOf", args: [address] },
+      { ...wethConfig, functionName: "balanceOf", args: [address] },
+      { ...wethConfig, functionName: "allowance", args: [address, CONTRACTS.LendingPool.address] },
+      { ...usdcConfig, functionName: "allowance", args: [address, CONTRACTS.LendingPool.address] },
     ],
     query: {
       enabled: isConnected && !!address,
-      refetchInterval: 5000,
+      refetchInterval: 8000,
     },
   })
 
@@ -68,7 +68,12 @@ export function useUserData() {
   const supplyAmount     = supplyPosition?.[0] || 0n
 
   const isLoading = poolLoading || tokenLoading
-  const refetch = () => { refetchPool() }
+
+  // Refetch both calls after transactions
+  const refetch = () => {
+    refetchPool()
+    refetchToken()
+  }
 
   return {
     address,
